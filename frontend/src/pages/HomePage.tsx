@@ -40,25 +40,6 @@ export default function HomePage() {
         });
         const recData = await recRes.json();
         if (recData.success) setRecommendedDorms(recData.data);
-        console.log('Recommended dorms response:', recData);
-        if (recData && Array.isArray(recData.data)) {
-          console.table(
-            recData.data.map((d: any) => ({
-              dorm_id: d.dorm_id,
-              dorm_name: d.dorm_name,
-              address: d.address,
-              prov: d.prov,
-              dist: d.dist,
-              avg_score: d.avg_score,
-              likes: d.likes,
-              min_price: d.min_price,
-              available_rooms: d.available_rooms,
-              medias_count: Array.isArray(d.medias) ? d.medias.length : 0,
-            }))
-          );
-        } else {
-          console.warn('No recommended dorms data to print', recData);
-        }
 
   
         const bkkRes = await fetch(API_URL, {
