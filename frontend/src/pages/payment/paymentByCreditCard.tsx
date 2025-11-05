@@ -1,7 +1,7 @@
 import React, { type FormEvent, useEffect, useState } from 'react';
 import './paymentByCreditCard.css';
 import { OMISE_PUBLIC_KEY } from '../../publicKey/omisePublicKey';
-import { type Page, type DormDataForPayment } from '../../App';
+import { type Page, type DormDataForPayment } from '../../App'; 
 
 declare global {
   interface Window {
@@ -17,7 +17,7 @@ interface PaymentByCreditCardProps {
 
 const PaymentByCreditCard: React.FC<PaymentByCreditCardProps> = ({ navigateTo, dormData, setErrorMessage }) => {
   const [isLoading, setIsLoading] = useState(false);
-
+  
   const priceInBaht = (dormData.room_types && dormData.room_types.length > 0)
     ? dormData.room_types[0].rent_per_month
     : 0;
@@ -47,16 +47,16 @@ const PaymentByCreditCard: React.FC<PaymentByCreditCardProps> = ({ navigateTo, d
       // 💡💡💡 (แก้ไข URL) 💡💡💡
       // (เพิ่ม /payment เข้าไป)
       const response = await fetch('http://localhost:3001/api/payment/create-charge', {
-        method: 'POST',
+        method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          amount: amountInSatang,
-          userId: 1,
-          roomId: dormData.dorm_id
+        body: JSON.stringify({ 
+            token, 
+            amount: amountInSatang,
+            userId: 1, // (TODO: ส่ง User ID จริง)
+            roomId: dormData.dorm_id
         }),
       });
-
+      // 💡💡💡 (จบจุดแก้ไข) 💡💡💡
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Payment failed');
@@ -67,7 +67,7 @@ const PaymentByCreditCard: React.FC<PaymentByCreditCardProps> = ({ navigateTo, d
       console.error('Payment Error:', error);
       setErrorMessage(error.message || 'An unknown error occurred.');
       navigateTo('fail');
-      setIsLoading(false);
+      setIsLoading(false); 
     }
   };
 
@@ -108,7 +108,7 @@ const PaymentByCreditCard: React.FC<PaymentByCreditCardProps> = ({ navigateTo, d
         <button onClick={() => navigateTo('checkout')} className="back-button" disabled={isLoading}>
           ← Back to options
         </button>
-
+        
         <div className="header">
           <div className="brand-logo">Esino</div>
           <span>Secured by Omise</span>
@@ -120,7 +120,7 @@ const PaymentByCreditCard: React.FC<PaymentByCreditCardProps> = ({ navigateTo, d
         </div>
 
         <form id="checkout-form" onSubmit={handleSubmit}>
-          <div className="form-group">
+           <div className="form-group">
             <label htmlFor="card-number">Card number</label>
             <div className="input-with-icon">
               <input type="text" id="card-number" placeholder="4242 4242 4242 4242" required />
