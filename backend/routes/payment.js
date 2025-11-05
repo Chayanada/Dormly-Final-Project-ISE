@@ -1,127 +1,93 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const router = express.Router();
+const { requireAuth } = require('../middleware/auth');
+const paymentService = require('../services/paymentService');
 
-
-const pool = require('../config/database');
-const omise = require('omise');
-
-if (!process.env.OMISE_SECRET_KEY) {
-  console.warn('*** WARNING: OMISE_SECRET_KEY is not defined ***');
-}
-const omiseClient = omise({
-  secretKey: process.env.OMISE_SECRET_KEY,
-  apiVersion: '2019-05-29',
-});
-
-
-router.post('/create-charge', async (req, res) => {
-  const { token, amount, userId, roomId } = req.body; 
-
-  if (!token || !amount) {
-    return res.status(400).json({ success: false, message: 'Token and amount are required' });
-  }
-  if (!omiseClient || !process.env.OMISE_SECRET_KEY) {
-     return res.status(500).json({ success: false, message: 'Omise client is not initialized.' });
-  }
-
+// POST /api/payment/create-charge - Create a payment charge and update booking
+router.post('/create-charge', requireAuth, async (req, res) => {
   try {
-    const charge = await omiseClient.charges.create({
-      amount: amount,
-      currency: 'thb',
-      card: token,
-      description: `Dormly Booking (Credit Card) for Room ID: ${roomId} by User ID: ${userId}`,
-    });
+    const { token, amount, bookingId, description } = req.body;
+    const userId = req.session.user.user_id;
 
-    if (charge.status === 'successful') {
-      
-      res.json({
-        success: true,
-        message: 'Payment processed and booking confirmed',
-        charge: charge,
-      });
-    } else {
-      res.status(400).json({
+    // Validate required fields
+    if (!token) {
+      return res.status(400).json({
         success: false,
-        message: charge.failure_message || 'Payment failed',
+        message: 'Payment token is required'
       });
     }
-  } catch (error) {
-    console.error('Omise API Error (Credit Card):', error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
 
-router.post('/create-qr-charge', async (req, res) => {
-  const { amount, userId, roomId } = req.body;
-
-  if (!amount) {
-    return res.status(400).json({ success: false, message: 'Amount is required' });
-  }
-  if (!omiseClient || !process.env.OMISE_SECRET_KEY) {
-     return res.status(500).json({ success: false, message: 'Omise client is not initialized.' });
-  }
-
-  try {
-    const charge = await omiseClient.charges.create({
-      amount: amount,
-      currency: 'thb',
-      source: { type: 'promptpay' },
-      description: `Dormly Booking (PromptPay) for Room ID: ${roomId} by User ID: ${userId}`,
-    });
-
-    const qrImageUrl = charge.source.scannable_code.image.download_uri;
-    
-    if (qrImageUrl) {
-      res.json({
-        success: true,
-        qrImageUrl: qrImageUrl,
-        chargeId: charge.id
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid payment amount is required'
       });
+    }
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking ID is required'
+      });
+    }
+
+    // Process payment
+    const result = await paymentService.processPayment({
+      token,
+      amount,
+      bookingId,
+      userId,
+      description
+    });
+
+    if (result.success) {
+      res.json(result);
     } else {
-      throw new Error('QR Code image URL not found in Omise response.');
+      res.status(400).json(result);
     }
-
   } catch (error) {
-    console.error('Omise API Error (PromptPay):', error);
+    console.error('Payment route error:', error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || 'Payment processing failed',
+      error: error.message
     });
   }
 });
 
-router.post('/omise-webhook', bodyParser.raw({type: 'application/json'}), async (req, res) => {
-  const event = req.body;
-
-  console.log('--- OMISE WEBHOOK RECEIVED ---');
-  console.log('Event Type:', event.key);
-
+// GET /api/payment/verify/:chargeId - Verify a charge status
+router.get('/verify/:chargeId', requireAuth, async (req, res) => {
   try {
-    if (event.key === 'charge.complete') {
-      const charge = event.data;
+    const { chargeId } = req.params;
 
-      if (charge.status === 'successful') {
-        console.log(`Charge ${charge.id} (PromptPay) is successful!`);
-        
-        
-        console.log(`Database updated for Charge ${charge.id}`);
-        
-      } else if (charge.status === 'failed') {
-        console.log(`Charge ${charge.id} (PromptPay) failed.`);
-      }
+    if (!chargeId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Charge ID is required'
+      });
     }
-    
-    res.status(200).send('OK');
-    
+
+    const charge = await paymentService.verifyCharge(chargeId);
+
+    res.json({
+      success: true,
+      charge: {
+        id: charge.id,
+        amount: charge.amount,
+        currency: charge.currency,
+        status: charge.status,
+        created: charge.created,
+        paid: charge.paid
+      }
+    });
   } catch (error) {
-    console.error('Webhook Error:', error.message);
-    res.status(500).send('Webhook error');
+    console.error('Charge verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Charge verification failed',
+      error: error.message
+    });
   }
 });
-
 
 module.exports = router;
