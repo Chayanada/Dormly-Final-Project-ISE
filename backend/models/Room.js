@@ -13,6 +13,8 @@ class Room {
           r.*,
           rt.room_type_name,
           rt.room_type_desc,
+          rt.max_occupancy,
+          rt.deposit_amount,
           rt.rent_per_month,
           rt.rent_per_day,
           d.dorm_id,
@@ -59,6 +61,8 @@ class Room {
           r.*,
           rt.room_type_name,
           rt.room_type_desc,
+          rt.max_occupancy,
+          rt.deposit_amount,
           rt.rent_per_month,
           rt.rent_per_day
         FROM "Rooms" r
@@ -86,6 +90,8 @@ class Room {
           r.*,
           rt.room_type_name,
           rt.room_type_desc,
+          rt.max_occupancy,
+          rt.deposit_amount,
           rt.rent_per_month,
           rt.rent_per_day
         FROM "Rooms" r
@@ -238,7 +244,7 @@ class Room {
   // Create a new room type
   static async createRoomType(roomTypeData, userId) {
     try {
-      const { dorm_id, room_type_name, room_type_desc, rent_per_month, rent_per_day } = roomTypeData;
+      const { dorm_id, room_type_name, room_type_desc, max_occupancy, deposit_amount, rent_per_month, rent_per_day } = roomTypeData;
 
       // Validate required fields
       if (!dorm_id || isNaN(dorm_id)) {
@@ -265,8 +271,8 @@ class Room {
       }
 
       const query = `
-        INSERT INTO "RoomTypes" (dorm_id, room_type_name, room_type_desc, rent_per_month, rent_per_day)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO "RoomTypes" (dorm_id, room_type_name, room_type_desc, max_occupancy, deposit_amount, rent_per_month, rent_per_day)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
       `;
 
@@ -274,6 +280,8 @@ class Room {
         dorm_id,
         room_type_name.trim(),
         room_type_desc?.trim() || null,
+        max_occupancy,
+        deposit_amount,
         rent_per_month || null,
         rent_per_day || null
       ]);
@@ -291,7 +299,7 @@ class Room {
     try {
       await client.query('BEGIN');
 
-      const { room_type_id, room_type_name, room_count, starting_number, status, cur_occupancy } = roomsData;
+      const { room_type_id, room_count, starting_number,status, cur_occupancy } = roomsData;
 
       // Validate required fields
       if (!room_type_id || isNaN(room_type_id)) {
@@ -376,7 +384,9 @@ class Room {
       const { 
         dorm_id, 
         room_type_name, 
-        room_type_desc, 
+        room_type_desc,
+        max_occupancy,
+        deposit_amount,
         rent_per_month, 
         rent_per_day,
         room_count,
@@ -393,15 +403,17 @@ class Room {
 
       // Create room type
       const roomTypeQuery = `
-        INSERT INTO "RoomTypes" (dorm_id, room_type_name, room_type_desc, rent_per_month, rent_per_day)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO "RoomTypes" (dorm_id, room_type_name, room_type_desc, max_occupancy, deposit_amount, rent_per_month, rent_per_day)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
       `;
 
-      const roomTypeResult = await client.query(roomTypeQuery, [
+      const roomTypeResult = await pool.query(roomTypeQuery, [
         dorm_id,
         room_type_name.trim(),
         room_type_desc?.trim() || null,
+        max_occupancy,
+        deposit_amount,
         rent_per_month || null,
         rent_per_day || null
       ]);

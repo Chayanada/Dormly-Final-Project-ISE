@@ -261,48 +261,48 @@ INSERT INTO "FacilityList" (dorm_id, faci_seq, faci_id) VALUES
 -- ROOM TYPES DATA
 -- ========================================
 
-INSERT INTO "RoomTypes" (dorm_id, room_type_name, room_type_desc, rent_per_month, rent_per_day) VALUES
+INSERT INTO "RoomTypes" (dorm_id, room_type_name, room_type_desc, max_occupancy, rent_per_month, rent_per_day, deposit_amount) VALUES
 -- Central University Dorm
-(1, 'Standard Single', 'Basic single room with shared bathroom', 3200.00, 130.00),
-(1, 'Deluxe Single', 'Single room with private bathroom', 3800.00, 155.00),
-(1, 'Twin Room', 'Shared room for two students', 2900.00, 120.00),
+(1, 'Standard Single', 'Basic single room with shared bathroom', 1, 3200.00, 130.00, 640.00),
+(1, 'Deluxe Single', 'Single room with private bathroom', 1, 3800.00, 155.00, 760.00),
+(1, 'Twin Room', 'Shared room for two students', 2, 2900.00, 120.00, 580.00),
 
--- Bangkok Student Hub  
-(2, 'Economy Room', 'Budget-friendly accommodation', 2800.00, 115.00),
-(2, 'Standard Room', 'Comfortable single room', 3500.00, 145.00),
-(2, 'Premium Suite', 'Spacious room with kitchenette', 4500.00, 185.00),
+-- Bangkok Student Hub
+(2, 'Economy Room', 'Budget-friendly accommodation', 1, 2800.00, 115.00, 560.00),
+(2, 'Standard Room', 'Comfortable single room', 1, 3500.00, 145.00, 700.00),
+(2, 'Premium Suite', 'Spacious room with kitchenette', 2, 4500.00, 185.00, 900.00),
 
 -- Victory Monument Residence
-(3, 'Single Room', 'Standard single occupancy', 3300.00, 135.00),
-(3, 'Double Room', 'Room for two students', 3000.00, 125.00),
+(3, 'Single Room', 'Standard single occupancy', 1, 3300.00, 135.00, 660.00),
+(3, 'Double Room', 'Room for two students', 2, 3000.00, 125.00, 600.00),
 
 -- Sukhumvit Student Lodge
-(4, 'Studio Apartment', 'Self-contained studio', 4200.00, 170.00),
-(4, 'Shared Apartment', 'Shared living space', 3400.00, 140.00),
+(4, 'Studio Apartment', 'Self-contained studio', 1, 4200.00, 170.00, 840.00),
+(4, 'Shared Apartment', 'Shared living space', 2, 3400.00, 140.00, 680.00),
 
 -- Asok Tower Dormitory
-(5, 'Mini Studio', 'Compact studio unit', 3900.00, 160.00),
-(5, 'Standard Single', 'Regular single room', 3600.00, 150.00),
+(5, 'Mini Studio', 'Compact studio unit', 1, 3900.00, 160.00, 780.00),
+(5, 'Standard Single', 'Regular single room', 1, 3600.00, 150.00, 720.00),
 
 -- Thonburi Riverside Dorm
-(6, 'River View Room', 'Room with river view', 4000.00, 165.00),
-(6, 'Garden View Room', 'Room facing garden', 3700.00, 155.00),
+(6, 'River View Room', 'Room with river view', 1, 4000.00, 165.00, 800.00),
+(6, 'Garden View Room', 'Room facing garden', 1, 3700.00, 155.00, 740.00),
 
 -- Chatuchak Park Residence
-(7, 'Park View Single', 'Single room with park view', 3800.00, 160.00),
-(7, 'Family Room', 'Large room for families', 5200.00, 210.00),
+(7, 'Park View Single', 'Single room with park view', 1, 3800.00, 160.00, 760.00),
+(7, 'Family Room', 'Large room for families', 2, 5200.00, 210.00, 1040.00),
 
 -- Sathorn Business Dorm
-(8, 'Executive Room', 'Premium business accommodation', 5500.00, 220.00),
-(8, 'Business Single', 'Professional single room', 4800.00, 195.00),
+(8, 'Executive Room', 'Premium business accommodation', 1, 5500.00, 220.00, 1100.00),
+(8, 'Business Single', 'Professional single room', 1, 4800.00, 195.00, 960.00),
 
 -- Chiang Mai University Dorm
-(9, 'Mountain View Room', 'Room with mountain view', 2500.00, 100.00),
-(9, 'Standard Room', 'Basic accommodation', 2200.00, 90.00),
+(9, 'Mountain View Room', 'Room with mountain view', 1, 2500.00, 100.00, 500.00),
+(9, 'Standard Room', 'Basic accommodation', 1, 2200.00, 90.00, 440.00),
 
 -- Phuket Beach Dormitory
-(10, 'Ocean View Suite', 'Premium suite with ocean view', 6000.00, 250.00),
-(10, 'Beach Room', 'Standard room near beach', 4500.00, 180.00);
+(10, 'Ocean View Suite', 'Premium suite with ocean view', 1, 6000.00, 250.00, 1200.00),
+(10, 'Beach Room', 'Standard room near beach', 1, 4500.00, 180.00, 900.00);
 
 -- ========================================
 -- ROOMS DATA (Multiple rooms per type)

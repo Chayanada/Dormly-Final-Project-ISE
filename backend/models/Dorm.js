@@ -49,6 +49,8 @@ class Dorm {
                   'room_type_id', rt.room_type_id,
                   'room_type_name', rt.room_type_name,
                   'room_type_desc', rt.room_type_desc,
+                  'max_occupancy', rt.max_occupancy,
+                  'deposit_amount', rt.deposit_amount,
                   'rent_per_month', rt.rent_per_month,
                   'rent_per_day', rt.rent_per_day,
                   'total_rooms', (
@@ -229,6 +231,9 @@ class Dorm {
       params.push(limit, offset);
       query += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
 
+
+      // Return 
+      // 
       const result = await pool.query(query, params);
       return result.rows;
     } catch (error) {

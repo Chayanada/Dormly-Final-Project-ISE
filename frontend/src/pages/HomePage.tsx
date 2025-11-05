@@ -12,7 +12,7 @@ interface Dorm {
   likes: number;
   medias: string[]; 
   min_price: number; 
-  available_rooms_count: number;
+  available_rooms: number;
 }
 
 export default function HomePage() {
@@ -40,6 +40,25 @@ export default function HomePage() {
         });
         const recData = await recRes.json();
         if (recData.success) setRecommendedDorms(recData.data);
+        console.log('Recommended dorms response:', recData);
+        if (recData && Array.isArray(recData.data)) {
+          console.table(
+            recData.data.map((d: any) => ({
+              dorm_id: d.dorm_id,
+              dorm_name: d.dorm_name,
+              address: d.address,
+              prov: d.prov,
+              dist: d.dist,
+              avg_score: d.avg_score,
+              likes: d.likes,
+              min_price: d.min_price,
+              available_rooms: d.available_rooms,
+              medias_count: Array.isArray(d.medias) ? d.medias.length : 0,
+            }))
+          );
+        } else {
+          console.warn('No recommended dorms data to print', recData);
+        }
 
   
         const bkkRes = await fetch(API_URL, {
@@ -194,7 +213,7 @@ function DormCard({ dorm }: DormCardProps) {
   };
 
   // ตรวจสอบสถานะห้องว่าง
-  const isAvailable = dorm.available_rooms_count > 0;
+  const isAvailable = dorm.available_rooms > 0;
   
   //  ดึงรูปภาพ (ใช้รูปแรกใน medias, หรือใช้ placeholder ถ้าไม่มี)
   const imageUrl = (dorm.medias && dorm.medias.length > 0) 

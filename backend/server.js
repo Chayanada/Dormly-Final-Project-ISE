@@ -3,7 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({path: '../.env'});
 
 const sessionConfig = require('./config/session');
 const pool = require('./config/database');

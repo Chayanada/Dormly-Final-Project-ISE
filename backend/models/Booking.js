@@ -1,3 +1,4 @@
+const { parse } = require('path');
 const pool = require('../config/database');
 
 class Booking {
@@ -5,8 +6,8 @@ class Booking {
   static validateBookingData(bookingData) {
     const errors = [];
     
-    if (!bookingData.room_id || isNaN(bookingData.room_id)) {
-      errors.push('Valid room ID is required');
+    if (!bookingData.room_type_id || isNaN(bookingData.room_type_id)) {
+      errors.push('Valid room type ID is required');
     }
     
     if (!bookingData.begin_at) {
@@ -21,6 +22,7 @@ class Booking {
     const beginDate = new Date(bookingData.begin_at);
     const endDate = new Date(bookingData.end_at);
     const now = new Date();
+    now.setHours(0, 0, 0, 0); // Reset to start of day for comparison
     
     if (isNaN(beginDate.getTime())) {
       errors.push('Invalid start date');
@@ -30,7 +32,10 @@ class Booking {
       errors.push('Invalid end date');
     }
     
-    if (beginDate < now) {
+    const beginDateOnly = new Date(beginDate);
+    beginDateOnly.setHours(0, 0, 0, 0);
+    
+    if (beginDateOnly < now) {
       errors.push('Start date cannot be in the past');
     }
     
@@ -56,6 +61,8 @@ class Booking {
           r.room_name,
           rt.room_type_name,
           rt.room_type_desc,
+          rt.max_occupancy,
+          rt.deposit_amount as room_type_deposit,
           rt.rent_per_month,
           rt.rent_per_day,
           d.dorm_id,
@@ -90,6 +97,8 @@ class Booking {
           b.*,
           r.room_name,
           rt.room_type_name,
+          rt.max_occupancy,
+          rt.deposit_amount as room_type_deposit,
           rt.rent_per_month,
           rt.rent_per_day,
           d.dorm_id,
@@ -127,6 +136,8 @@ class Booking {
           r.room_name,
           rt.room_type_name,
           rt.room_type_desc,
+          rt.max_occupancy,
+          rt.deposit_amount as room_type_deposit,
           rt.rent_per_month,
           rt.rent_per_day,
           d.dorm_id,
@@ -215,107 +226,113 @@ class Booking {
         throw new Error('Invalid user ID');
       }
 
-      const { room_id, begin_at, end_at } = bookingData;
+      const { room_type_id, begin_at, end_at } = bookingData;
 
-      // Check if room exists and is available
-      const roomCheck = await client.query(
-        'SELECT status FROM "Rooms" WHERE room_id = $1',
-        [room_id]
+      // Get all rooms of this type with their max occupancy
+      const roomsQuery = await client.query(
+        `SELECT r.room_id, r.room_name, r.status, r.cur_occupancy,
+                rt.room_type_name,
+                rt.max_occupancy,
+                rt.deposit_amount
+         FROM "Rooms" r
+         JOIN "RoomTypes" rt ON r.room_type_id = rt.room_type_id
+         WHERE rt.room_type_id = $1
+         ORDER BY r.cur_occupancy ASC, r.room_id ASC`,
+        [room_type_id]
       );
 
-      if (roomCheck.rows.length === 0) {
-        throw new Error('Room not found');
+      if (roomsQuery.rows.length === 0) {
+        throw new Error('No rooms found for this room type');
       }
 
-      if (roomCheck.rows[0].status !== 'available') {
-        throw new Error('Room is not available');
+      // Find an available room that won't exceed max occupancy
+      let selectedRoom = null;
+      const depositAmount = parseFloat(roomsQuery.rows[0].deposit_amount);
+
+      for (const room of roomsQuery.rows) {
+        // Check current and future occupancy for this room during the booking period
+        const occupancyCheck = await client.query(
+          `SELECT COUNT(*) as booking_count
+           FROM "DormBookings"
+           WHERE room_id = $1
+           AND status NOT IN ('ถูกยกเลิก', 'ปฏิเสธ', 'หมดสัญญาเช่า')
+           AND (
+             (begin_at <= $2 AND end_at > $2) OR
+             (begin_at < $3 AND end_at >= $3) OR
+             (begin_at >= $2 AND end_at <= $3)
+           )`,
+          [room.room_id, begin_at, end_at]
+        );
+
+        const currentBookings = parseInt(occupancyCheck.rows[0].booking_count);
+        
+        // Check if adding this booking would exceed max occupancy
+        if (currentBookings < room.max_occupancy) {
+          selectedRoom = room;
+          break;
+        }
       }
 
-      // Check for conflicting bookings
-      const hasConflict = await this.hasConflictingBooking(room_id, begin_at, end_at);
-      if (hasConflict) {
-        throw new Error('Room is already booked for the selected dates');
+      if (!selectedRoom) {
+        throw new Error('No available rooms for the selected dates. All rooms are at maximum occupancy.');
       }
 
       // Create booking
-      const query = `
-        INSERT INTO "DormBookings" (booker_id, room_id, begin_at, end_at, status)
-        VALUES ($1, $2, $3, $4, $5)
+      const bookingQuery = `
+        INSERT INTO "DormBookings" (booker_id, room_id, deposit_amount, created_at, begin_at, end_at, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
       `;
       
-      const result = await client.query(query, [
+      const result = await client.query(bookingQuery, [
         userId, 
-        room_id, 
+        selectedRoom.room_id, 
+        depositAmount,
+        new Date(),
         begin_at, 
         end_at, 
-        'pending'
+        'รอการยืนยันจากเจ้าของหอพัก'
       ]);
 
-      // Update room status to occupied
-      await client.query(
-        'UPDATE "Rooms" SET status = $1 WHERE room_id = $2',
-        ['occupied', room_id]
+      // Check if start date is today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startDate = new Date(begin_at);
+      startDate.setHours(0, 0, 0, 0);
+
+      if (startDate.getTime() === today.getTime()) {
+        // Update current occupancy if start date is today
+        await client.query(
+          'UPDATE "Rooms" SET cur_occupancy = cur_occupancy + 1 WHERE room_id = $1',
+          [selectedRoom.room_id]
+        );
+      }
+
+      // Update room status to occupied if this is the first/only booking
+      const finalOccupancyCheck = await client.query(
+        `SELECT COUNT(*) as active_bookings
+         FROM "DormBookings"
+         WHERE room_id = $1
+         AND status NOT IN ('ถูกยกเลิก', 'ปฏิเสธ', 'หมดสัญญาเช่า')
+         AND begin_at <= CURRENT_DATE
+         AND end_at > CURRENT_DATE`,
+        [selectedRoom.room_id]
       );
+
+      const activeBookings = parseInt(finalOccupancyCheck.rows[0].active_bookings);
+      
+      if (activeBookings >= selectedRoom.max_occupancy) {
+        await client.query(
+          'UPDATE "Rooms" SET status = $1 WHERE room_id = $2',
+          ['ห้องไม่ว่าง', selectedRoom.room_id]
+        );
+      }
 
       await client.query('COMMIT');
       return result.rows[0];
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('Error creating booking:', error);
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  // Cancel a booking
-  static async cancelBooking(bookingId, userId) {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      if (!bookingId || isNaN(bookingId)) {
-        throw new Error('Invalid booking ID');
-      }
-
-      // Check if booking exists and belongs to user
-      const bookingCheck = await client.query(
-        'SELECT room_id, booker_id, status FROM "DormBookings" WHERE booking_id = $1',
-        [bookingId]
-      );
-
-      if (bookingCheck.rows.length === 0) {
-        throw new Error('Booking not found');
-      }
-
-      if (bookingCheck.rows[0].booker_id !== userId) {
-        throw new Error('Unauthorized: You can only cancel your own bookings');
-      }
-
-      if (bookingCheck.rows[0].status === 'cancelled') {
-        throw new Error('Booking is already cancelled');
-      }
-
-      const roomId = bookingCheck.rows[0].room_id;
-
-      // Update booking status
-      const result = await client.query(
-        'UPDATE "DormBookings" SET status = $1 WHERE booking_id = $2 RETURNING *',
-        ['cancelled', bookingId]
-      );
-
-      // Update room status back to available
-      await client.query(
-        'UPDATE "Rooms" SET status = $1 WHERE room_id = $2',
-        ['available', roomId]
-      );
-
-      await client.query('COMMIT');
-      return result.rows[0];
-    } catch (error) {
-      await client.query('ROLLBACK');
-      console.error('Error cancelling booking:', error);
       throw error;
     } finally {
       client.release();
