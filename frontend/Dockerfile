@@ -9,7 +9,6 @@ WORKDIR /app
 # Copy package.json
 COPY package*.json ./
 
-# ติดตั้ง dependencies
 RUN npm install
 
 # Copy โค้ดที่เหลือ (ไม่จำเป็นต้อง Build)

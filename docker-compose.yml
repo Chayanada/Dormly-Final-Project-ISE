@@ -52,6 +52,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=${NODE_ENV}
     container_name: dormly-frontend
     restart: unless-stopped
     environment:
@@ -60,6 +62,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.vite
     ports:
       - "${FRONTEND_PORT}:5173"
     networks:

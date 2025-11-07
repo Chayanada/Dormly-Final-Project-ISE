@@ -258,7 +258,7 @@ class Dorm {
         throw new Error('Invalid user ID');
       }
 
-      // Check if user is already a dorm owner, if not create owner record
+      // Check if user is a dorm owner
       let ownerResult = await client.query(
         'SELECT dorm_own_id FROM "DormOwners" WHERE user_id = $1',
         [userId]
@@ -266,11 +266,7 @@ class Dorm {
 
       let ownerId;
       if (ownerResult.rows.length === 0) {
-        const newOwner = await client.query(
-          'INSERT INTO "DormOwners" (user_id) VALUES ($1) RETURNING dorm_own_id',
-          [userId]
-        );
-        ownerId = newOwner.rows[0].dorm_own_id;
+        throw new Error('User is not registered as a dorm owner');
       } else {
         ownerId = ownerResult.rows[0].dorm_own_id;
       }
