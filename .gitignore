@@ -52,3 +52,6 @@ pids
 dormly frontend/
 frontend nai/
 *.zip
+
+.env
+frontend/.env

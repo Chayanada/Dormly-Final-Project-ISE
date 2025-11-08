@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/use-auth';
+import RequireAuth from '../components/common/NeedLogin';
 import { IoBedOutline, IoCalendarOutline, IoCloseCircleOutline } from 'react-icons/io5'; 
 import { FaMoneyBillWave, FaClock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
-import { type DormDataForPayment } from '../App'; 
 
 interface Booking {
     id: string;
@@ -49,33 +49,9 @@ export default function ReservedPage() {
                         checkInDate: '2025/12/15',
                         checkOutDate: '2026/02/15',
                         numberOfMonths: 1,
-                        totalPrice: 3800, // (ราคาต่อเดือน)
-                        status: 'รอการยืนยันจากเจ้าของหอพัก',
-                        dormId: '1',
-                        dormImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1470&q=80',
-                    },
-                    {
-                        id: '1',
-                        dormName: 'Central University Dorm',
-                        roomType: 'Deluxe Single',
-                        checkInDate: '2025/12/15',
-                        checkOutDate: '2026/02/15',
-                        numberOfMonths: 1,
-                        totalPrice: 3800, // (ราคาต่อเดือน)
-                        status: 'รอการชำระเงินมัดจำ',
-                        dormId: '1',
-                        dormImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1470&q=80',
-                    },
-                    {
-                        id: '1',
-                        dormName: 'Central University Dorm',
-                        roomType: 'Deluxe Single',
-                        checkInDate: '2025/12/15',
-                        checkOutDate: '2026/02/15',
-                        numberOfMonths: 1,
-                        totalPrice: 3800, // (ราคาต่อเดือน)
+                        totalPrice: 11400,
                         status: 'ชำระจำนวนครบล้ว',
-                        dormId: '1',
+                        dormId: '3',
                         dormImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1470&q=80',
                     },
                 ];
@@ -91,6 +67,9 @@ export default function ReservedPage() {
         fetchBookings();
     }, []);
 
+    if (role === 'guest' || !role) {
+        return <RequireAuth />;
+    }
 
     const getStatusStyle = (status: string): { bgColor: string, textColor: string, icon: React.ReactNode } => {
         switch (status) {
@@ -112,12 +91,10 @@ export default function ReservedPage() {
                 return { bgColor: 'bg-gray-50', textColor: 'text-gray-600', icon: <FaExclamationTriangle className="w-4 h-4" /> };
         }
     };
-    
     const handlePayDeposit = (booking: Booking) => {
         if (!booking.dormId) return;
 
-
-        const dormData: DormDataForPayment = {
+        const dormData = {
             dorm_id: Number(booking.dormId),
             dorm_name: booking.dormName,
             medias: booking.dormImage ? [booking.dormImage] : [],
@@ -159,7 +136,7 @@ export default function ReservedPage() {
 
     const handleViewDetails = (dormId?: string) => {
         if (dormId) {
-            navigate(`/dorms/${dormId}`); 
+            navigate(`/dorm/${dormId}`);
         }
     };
 
@@ -178,9 +155,11 @@ export default function ReservedPage() {
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-16">
+                {/* Header */}
                 <h1 className="text-4xl font-extrabold text-gray-900 mb-4">สถานะการจองของฉัน</h1>
                 <p className='text-gray-500 text-lg mb-10'>ติดตามการจองหอพักทั้งหมดของคุณที่นี่</p>
 
+                {/* Tabs */}
                 <div className="mb-8">
                     <div className="flex flex-wrap gap-2 pb-0 bg-white rounded-xl p-3 border border-gray-200">
                         {STATUS_TABS.map(tab => (
@@ -200,6 +179,7 @@ export default function ReservedPage() {
                     </div>
                 </div>
 
+                {/* Table Container */}
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                     {filteredBookings.length === 0 ? (
                         <div className="p-16 text-center text-gray-500">
@@ -240,48 +220,57 @@ export default function ReservedPage() {
                                                 <td className="px-6 py-6">
                                                     <div className="flex items-center gap-4">
                                                         <img 
-                                                            src={booking.dormImage || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=Dorm'} 
+                                                            src={booking.dormImage || 'https://via.placeholder.com/64/F3F4F6/9CA3AF?text=D'} 
                                                             alt={booking.dormName} 
-                                                            className="w-20 h-20 rounded-lg object-cover"
+                                                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                                                         />
-                                                        <div>
-                                                            <button 
-                                                                onClick={() => handleViewDetails(booking.dormId)}
-                                                                className="font-semibold text-base text-gray-900 hover:text-purple-600 transition"
-                                                            >
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-bold text-gray-900 text-base truncate mb-2">
                                                                 {booking.dormName}
+                                                            </p>
+                                                            <button
+                                                                onClick={() => handleViewDetails(booking.dormId)}
+                                                                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 transition border border-gray-300"
+                                                            >
+                                                                ดูรายละเอียด
                                                             </button>
-                                                            <div className="text-sm text-gray-500">ID: {booking.id}</div>
                                                         </div>
                                                     </div>
                                                 </td>
+
                                                 {/* Room Type */}
                                                 <td className="px-6 py-6">
-                                                    <div className="text-sm font-medium text-gray-800">{booking.roomType}</div>
-                                                    <div className="text-sm text-gray-500">{booking.totalPrice.toLocaleString()} THB/เดือน</div>
+                                                    <div className="flex items-center text-sm font-medium text-gray-900">
+                                                        <IoBedOutline className="w-5 h-5 mr-2 text-indigo-500" />
+                                                        {booking.roomType}
+                                                    </div>
                                                 </td>
+
                                                 {/* Dates */}
                                                 <td className="px-6 py-6">
-                                                    <div className="text-sm font-medium text-gray-800">
-                                                        {booking.checkInDate} - {booking.checkOutDate}
+                                                    <div className="flex items-center text-sm text-gray-700">
+                                                        <IoCalendarOutline className="w-5 h-5 mr-2 text-gray-400" />
+                                                        <div>
+                                                            <div className="font-medium">{booking.checkInDate}</div>
+                                                            <div className="text-xs text-gray-500">ถึง {booking.checkOutDate}</div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-sm text-gray-500">{booking.numberOfMonths} เดือน</div>
                                                 </td>
+
                                                 {/* Status */}
                                                 <td className="px-6 py-6">
-                                                    <span 
-                                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusStyle.bgColor} ${statusStyle.textColor}`}
+                                                    <span
+                                                        className={`px-3 py-2 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 ${statusStyle.bgColor} ${statusStyle.textColor}`}
                                                     >
                                                         {statusStyle.icon}
                                                         {booking.status}
                                                     </span>
                                                 </td>
+
                                                 {/* Actions */}
-                                                <td className="px-6 py-6 text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        {actionButtons.length > 0 ? actionButtons : (
-                                                            <span className="text-sm text-gray-400 italic">ไม่มี</span>
-                                                        )}
+                                                <td className="px-6 py-6">
+                                                    <div className="flex gap-2 justify-end">
+                                                        {actionButtons.map((button) => button)}
                                                     </div>
                                                 </td>
                                             </tr>
