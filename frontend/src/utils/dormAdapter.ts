@@ -1,6 +1,3 @@
-// src/utils/dormAdapter.ts
-// แปลงข้อมูลจาก Backend format เป็น Frontend format
-
 import { DormDetail, DormRoom } from '../services/dormService';
 
 /**
