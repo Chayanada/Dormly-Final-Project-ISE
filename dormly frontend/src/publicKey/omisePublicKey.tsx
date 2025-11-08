@@ -1,1 +1,0 @@
-export const OMISE_PUBLIC_KEY = 'pkey_test_657xmw620rp982lzbtk' ;

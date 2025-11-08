@@ -11,9 +11,5 @@ export default function ReviewPage() {
 
     return (
         <NotAvailable />
-        // <div className="p-8">
-        // <h1 className="text-3xl font-bold mb-6">Review</h1>
-        // <p className="text-gray-600">Your reviews will appear here...</p>
-        // </div>
     );
 }

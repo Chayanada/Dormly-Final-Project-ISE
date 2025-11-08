@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import './checkOut.css';
 import { type Page, type DormDataForPayment } from '../../App';
-import { FaRegCreditCard } from "react-icons/fa6";
-import { BsBank2 } from "react-icons/bs";
-import { IoQrCode } from "react-icons/io5";
+import {
+  FiCreditCard,
+  FiSmartphone,
+  FiGrid
+} from 'react-icons/fi';
 
 const paymentOptions = [
-  { id: 'card', name: 'CreditCard', icon: FaRegCreditCard, targetPage: 'paymentCard' as Page },
-  { id: 'mobile_banking', name: 'Mobile banking', icon: BsBank2, targetPage: 'mobileBanking' as Page },
-  { id: 'qrPayment', name: 'QR Payment', icon: IoQrCode, targetPage: 'qrPayment' as Page }
+  { id: 'card', name: 'Card', icon: FiCreditCard, targetPage: 'paymentCard' as Page },
+  { id: 'mobile_banking', name: 'Mobile banking', icon: FiSmartphone, targetPage: 'mobileBanking' as Page },
+  { id: 'qrPayment', name: 'QR Payment', icon: FiGrid, targetPage: 'qrPayment' as Page },
+  // { id: 'installment', name: 'Installment', icon: FiPieChart, targetPage: 'checkout' as Page }, // ยังไม่เปิดใช้งาน
 ];
 
 interface CheckoutProps {
@@ -20,30 +23,44 @@ const Checkout: React.FC<CheckoutProps> = ({ navigateTo, dormData }) => {
   const [selectedOption, setSelectedOption] = useState<string>('card');
 
   if (!dormData || !dormData.room_types || dormData.room_types.length === 0) {
-    return <div>Error: Dorm data is missing. (checkOut.tsx)</div>;
+    return (
+      <div className="checkout-container">
+        <h1 className="checkout-title">Error</h1>
+        <p>ไม่พบข้อมูลหอพัก (checkOut.tsx)</p>
+      </div>
+    );
   }
 
   const productPrice = dormData.room_types[0].rent_per_month;
-  const productImage = dormData.medias[0] || 'https://images.unsplash.com/photo-1570129477490-d5e03a0c5b59?q=80&w=400';
+  const productImage =
+    dormData.medias && dormData.medias.length > 0
+      ? dormData.medias[0]
+      : 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Dorm';
 
   const handleNextClick = () => {
-    const selected = paymentOptions.find(opt => opt.id === selectedOption);
-    if (selected) {
-      if (selected.targetPage === 'checkout') {
-        alert('This payment method is not available yet.');
-        return;
-      }
-   
-      navigateTo(selected.targetPage);
+    const selected = paymentOptions.find((opt) => opt.id === selectedOption);
+    if (!selected) return;
+
+    // installment ยังไม่ให้ใช้
+    if (selected.targetPage === 'checkout') {
+      alert('This payment method is not available yet.');
+      return;
     }
+
+    navigateTo(selected.targetPage);
   };
 
   return (
     <div className="checkout-container">
       <h1 className="checkout-title">Checkout</h1>
 
+      {/* Order Summary */}
       <div className="order-summary">
-        <img src={productImage} alt={dormData.dorm_name} className="product-image" />
+        <img
+          src={productImage}
+          alt={dormData.dorm_name}
+          className="product-image"
+        />
         <div className="product-details">
           <h3>{dormData.dorm_name}</h3>
           <p>Monthly Rental</p>
@@ -55,12 +72,15 @@ const Checkout: React.FC<CheckoutProps> = ({ navigateTo, dormData }) => {
 
       <hr className="divider" />
 
+      {/* Payment Options */}
       <h2 className="payment-title">Select your payment option</h2>
       <div className="payment-options-list">
         {paymentOptions.map((option) => (
           <button
             key={option.id}
-            className={`payment-option ${selectedOption === option.id ? 'selected' : ''}`}
+            className={`payment-option ${
+              selectedOption === option.id ? 'selected' : ''
+            }`}
             onClick={() => setSelectedOption(option.id)}
           >
             <option.icon className="payment-icon" />
@@ -69,6 +89,7 @@ const Checkout: React.FC<CheckoutProps> = ({ navigateTo, dormData }) => {
         ))}
       </div>
 
+      {/* Footer */}
       <div className="checkout-footer">
         <button className="next-button" onClick={handleNextClick}>
           Next
