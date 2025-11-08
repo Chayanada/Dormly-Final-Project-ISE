@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* ซ่อนปุ่ม reveal ของ Edge/IE */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+/* กันไว้สำหรับ Chromium ที่บางเครื่องยังโชว์ปุ่ม auto-fill ในช่อง password */
+input[type="password"]::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    display: none;
+}

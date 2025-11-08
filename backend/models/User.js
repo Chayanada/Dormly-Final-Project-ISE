@@ -59,48 +59,42 @@ class User {
 
   // Create new user (registration)
   static async createUser(userData) {
-    try {
-      // Validate input data
-      const validationErrors = this.validateRegistrationData(userData);
-      if (validationErrors.length > 0) {
-        throw new Error(validationErrors.join(', '));
-      }
+  const {
+    username,
+    email,
+    password,
+    first_name,
+    last_name,
+  } = userData;
 
-      const { 
-        username, password, f_name, l_name, email, 
-        sex, national_id 
-      } = userData;
-      
-      // Hash the password
-      const saltRounds = 12;
-      const password_hash = await bcrypt.hash(password, saltRounds);
-      
-      const query = `
-        INSERT INTO "Users" (
-          username, password, f_name, l_name, email,
-          sex, national_id
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING user_id, username, f_name, l_name, email, 
-                  sex, national_id, registered_at
-      `;
-      
-      const result = await pool.query(query, [
-        username.trim(), 
-        password_hash, 
-        f_name.trim(), 
-        l_name.trim(), 
-        email.trim().toLowerCase(),
-        sex || null,
-        national_id || null
-      ]);
-      
-      return result.rows[0];
-    } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
-    }
+  if (!username || !email || !password) {
+    throw new Error('Username, email and password are required');
   }
+
+  // ทำให้ first_name / last_name ไม่บังคับ
+  const safeFirstName = first_name || '';
+  const safeLastName = last_name || '';
+
+  // ตัวอย่าง insert (ปรับให้เข้ากับโค้ดจริงของคุณ)
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const [result] = await db.query(
+    `
+    INSERT INTO users (username, email, password, first_name, last_name)
+    VALUES (?, ?, ?, ?, ?)
+    `,
+    [username, email, hashedPassword, safeFirstName, safeLastName]
+  );
+
+  return {
+    user_id: result.insertId,
+    username,
+    email,
+    first_name: safeFirstName,
+    last_name: safeLastName,
+  };
+}
+
 
   // Authenticate user (for login)
   static async authenticateUser(username, password) {
@@ -109,28 +103,28 @@ class User {
         return null;
       }
 
-      // Get the user with password hash
       const query = `
         SELECT 
           user_id, username, password, f_name, l_name, email,
           sex, national_id, profile_path, registered_at
         FROM "Users"
-        WHERE username = $1
-      `;
+        WHERE username = $1`
+      ;
       const result = await pool.query(query, [username.trim()]);
       const user = result.rows[0];
-      
+
       if (!user) {
         return null; // User not found
       }
-      
-      // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      
+
+      // const isValidPassword = await bcrypt.compare(password, user.password);
+
+      const isValidPassword = (password === user.password);
+
       if (!isValidPassword) {
         return null; // Invalid password
       }
-      
+
       // Return user without password hash
       const { password: _, ...userWithoutPassword } = user;
       return userWithoutPassword;
@@ -139,6 +133,7 @@ class User {
       throw error;
     }
   }
+
 
   // Check if username exists
   static async usernameExists(username) {

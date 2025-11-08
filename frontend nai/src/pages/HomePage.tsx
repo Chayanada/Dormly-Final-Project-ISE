@@ -374,22 +374,17 @@ export default function HomePage() {
                 setNewDorms(shuffled.slice(40, 50));
 
             } catch (error) {
-                console.error('Error fetching dorms:', error);
-                
-                // ถ้า API ไม่ทำงาน ใช้ mock data
-                const mockDorms = createMockDorms(1, 15);
-                setRecommendedDorms(mockDorms);
-                setBangkokDorms(createMockDorms(16, 15));
-                setPromoDorms(createMockDorms(31, 15));
-                setPopularDorms(createMockDorms(46, 15));
-                setNewDorms(createMockDorms(61, 15));
-            } finally {
-                setLoading(false);
-            }
-        };
+        console.error('Error fetching dorms:', error);
 
-        fetchDorms();
-    }, []);
+        setRecommendedDorms(createMockDorms(1, 10));
+        setBangkokDorms(createMockDorms(11, 10));
+        setPromoDorms(createMockDorms(21, 10));
+        setPopularDorms(createMockDorms(31, 10));
+        setNewDorms(createMockDorms(41, 10));
+    } finally {
+        setLoading(false);
+    }
+
 
     const createMockDorms = (startId: number, count: number): Dorm[] => {
         return Array.from({ length: count }, (_, i) => ({
@@ -404,6 +399,7 @@ export default function HomePage() {
             imageUrl: `https://images.unsplash.com/photo-${1555854877 + i}-${Math.floor(Math.random() * 999999999)}?w=400&h=300&fit=crop`
         }));
     };
+    
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

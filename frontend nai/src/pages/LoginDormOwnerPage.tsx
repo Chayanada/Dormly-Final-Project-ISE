@@ -7,15 +7,19 @@ export default function LoginDormOwnerPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const { loginAsDormOwner } = useAuth();
+    const { loginDormOwner, loading, error } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('DormOwner Login:', { email, password });
-        loginAsDormOwner();
-        navigate('/');
+        try {
+            await loginDormOwner(email, password);
+            navigate('/');
+        } catch {
+            // error จาก context
+        }
     };
+
 
     return (
         <div className="flex h-screen bg-gray-50">
@@ -76,7 +80,21 @@ export default function LoginDormOwnerPage() {
                 >
                 login dorm
                 </button>
+                {error && (
+                <p className="text-red-500 text-sm mt-2 text-center">
+                    {error}
+                </p>
+                )}
             </form>
+
+            <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg"
+                >
+                {loading ? 'Logging in...' : 'login dorm'}
+            </button>
+
 
             <p className="text-center mt-6 text-sm">
                 does not have an account yet?{' '}
